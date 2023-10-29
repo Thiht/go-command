@@ -26,7 +26,14 @@ go-command is **not** a framework, so here's where it **won't** help you:
 3. I wanted a simpler alternative to [spf13/cobra](https://github.com/spf13/cobra) and [urfave/cli](https://github.com/urfave/cli)
    - go-command doesn't aim at being as full-featured as these
 
-## Example
+## Examples
+
+Full examples are available in [./examples](./examples):
+
+- [echo](./examples/echo): a basic command showing the usage of a single command with a handler, flags, and positional arguments.
+- [github](./examples/github): a command showing the usage subcommands with dependency injection.
+
+---
 
 ```go
 package main
