@@ -15,7 +15,10 @@ type Handler func(context.Context, *flag.FlagSet, []string) int
 // Command represents any command or subcommand of the application.
 type Command interface {
 	// SubCommand adds a new subcommand to an existing command.
-	SubCommand(string, Handler) Command
+	SubCommand(string) Command
+
+	// Action sets the action to execute when calling the command.
+	Action(Handler) Command
 
 	// Execute runs the command using [os.Args]. It should normally be called on the root command.
 	Execute(context.Context)
@@ -37,11 +40,10 @@ type command struct {
 }
 
 // Root creates a new root command.
-func Root(handler Handler) Command {
+func Root() Command {
 	command := command{
 		name:        os.Args[0],
 		subCommands: map[string]*command{},
-		handler:     handler,
 		flagSet:     flag.CommandLine,
 	}
 
@@ -50,10 +52,9 @@ func Root(handler Handler) Command {
 	return &command
 }
 
-func (c *command) SubCommand(name string, handler Handler) Command {
+func (c *command) SubCommand(name string) Command {
 	c.subCommands[name] = &command{
 		name:        name,
-		handler:     handler,
 		subCommands: map[string]*command{},
 		flagSet:     flag.NewFlagSet(name, flag.ExitOnError),
 		parent:      c,
@@ -62,6 +63,11 @@ func (c *command) SubCommand(name string, handler Handler) Command {
 	c.subCommands[name].flagSet.Usage = c.subCommands[name].usage
 
 	return c.subCommands[name]
+}
+
+func (c *command) Action(handler Handler) Command {
+	c.handler = handler
+	return c
 }
 
 func (c *command) Execute(ctx context.Context) {

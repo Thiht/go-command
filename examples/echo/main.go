@@ -10,11 +10,11 @@ import (
 )
 
 func main() {
-	root := command.Root(nil).Flags(func(flagSet *flag.FlagSet) {
+	root := command.Root().Flags(func(flagSet *flag.FlagSet) {
 		flagSet.Bool("verbose", false, "Enable verbose output")
 	}).Help("Example command")
 
-	root.SubCommand("echo", EchoHandler).Flags(func(flagSet *flag.FlagSet) {
+	root.SubCommand("echo").Action(EchoHandler).Flags(func(flagSet *flag.FlagSet) {
 		flagSet.String("case", "", "Case to use (upper, lower)")
 	})
 

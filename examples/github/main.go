@@ -12,13 +12,13 @@ import (
 func main() {
 	client := github.NewClient(nil)
 
-	root := command.Root(nil).Flags(func(flagSet *flag.FlagSet) {
+	root := command.Root().Flags(func(flagSet *flag.FlagSet) {
 		flagSet.Bool("verbose", false, "Enable verbose output")
 	}).Help("Example command")
 
-	reposCommand := root.SubCommand("repos", nil).Help("Manage GitHub repositories")
+	reposCommand := root.SubCommand("repos").Help("Manage GitHub repositories")
 	{
-		reposCommand.SubCommand("list", handlers.ReposListHandler(client)).Flags(func(flagSet *flag.FlagSet) {
+		reposCommand.SubCommand("list").Action(handlers.ReposListHandler(client)).Flags(func(flagSet *flag.FlagSet) {
 			flagSet.String("user", "", "GitHub user")
 		}).Help("List repositories of a GitHub user")
 	}
