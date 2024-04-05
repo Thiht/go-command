@@ -2,11 +2,29 @@ package command_test
 
 import (
 	"flag"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/Thiht/go-command"
 )
+
+type stringList []string
+
+var _ flag.Getter = (*stringList)(nil)
+
+func (sl *stringList) Set(value string) error {
+	*sl = strings.Split(value, ",")
+	return nil
+}
+
+func (sl *stringList) String() string {
+	return strings.Join(*sl, ",")
+}
+
+func (sl *stringList) Get() any {
+	return *sl
+}
 
 func TestLookup(t *testing.T) {
 	t.Parallel()
@@ -21,6 +39,9 @@ func TestLookup(t *testing.T) {
 	fs.Float64("float64", 0, "")
 	fs.Duration("duration", 0, "")
 
+	var strings stringList
+	fs.Var(&strings, "strings", "")
+
 	if err := fs.Parse([]string{
 		"-bool",
 		"-int=1",
@@ -30,6 +51,7 @@ func TestLookup(t *testing.T) {
 		"-string=debug",
 		"-float64=3.14",
 		"-duration=1s",
+		"-strings=foo,bar,baz",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -95,6 +117,14 @@ func TestLookup(t *testing.T) {
 
 		if durationValue := command.Lookup[time.Duration](fs, "duration"); durationValue != time.Second {
 			t.Errorf("durationValue = %v, want %v", durationValue, time.Second)
+		}
+	})
+
+	t.Run("lookup custom type stringList", func(t *testing.T) {
+		t.Parallel()
+
+		if stringsValue := command.Lookup[stringList](fs, "strings"); len(stringsValue) != 3 || stringsValue[0] != "foo" || stringsValue[1] != "bar" || stringsValue[2] != "baz" {
+			t.Errorf("stringsValue = %v, want %v", stringsValue, []string{"foo", "bar", "baz"})
 		}
 	})
 

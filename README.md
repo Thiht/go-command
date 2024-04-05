@@ -14,6 +14,7 @@ Here's what go-command **will** help you do:
 go-command is **not** a framework, so here's where it **won't** help you:
 
 - flag validation beyond what's supported by `flag`
+  - note that you can do more than you probably expect if you create custom flag types implementing [`flag.Getter`](https://pkg.go.dev/flag#Getter)
 - positional arguments validation
 - no specific support for environment variables
 - error handling
