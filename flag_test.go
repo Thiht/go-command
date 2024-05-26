@@ -2,6 +2,7 @@ package command_test
 
 import (
 	"flag"
+	"net"
 	"strings"
 	"testing"
 	"time"
@@ -26,6 +27,25 @@ func (sl *stringList) Get() any {
 	return *sl
 }
 
+type ipVar struct {
+	IP net.IP
+}
+
+var _ flag.Getter = &ipVar{}
+
+func (v *ipVar) Get() any {
+	return v.IP
+}
+
+func (v *ipVar) String() string {
+	return v.IP.String()
+}
+
+func (v *ipVar) Set(s string) error {
+	v.IP = net.ParseIP(s)
+	return nil
+}
+
 func TestLookup(t *testing.T) {
 	t.Parallel()
 
@@ -42,6 +62,8 @@ func TestLookup(t *testing.T) {
 	var strings stringList
 	fs.Var(&strings, "strings", "")
 
+	fs.Var(&ipVar{}, "ip", "")
+
 	if err := fs.Parse([]string{
 		"-bool",
 		"-int=1",
@@ -52,6 +74,7 @@ func TestLookup(t *testing.T) {
 		"-float64=3.14",
 		"-duration=1s",
 		"-strings=foo,bar,baz",
+		"-ip=127.0.0.1",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -125,6 +148,14 @@ func TestLookup(t *testing.T) {
 
 		if stringsValue := command.Lookup[stringList](fs, "strings"); len(stringsValue) != 3 || stringsValue[0] != "foo" || stringsValue[1] != "bar" || stringsValue[2] != "baz" {
 			t.Errorf("stringsValue = %v, want %v", stringsValue, []string{"foo", "bar", "baz"})
+		}
+	})
+
+	t.Run("lookup ip", func(t *testing.T) {
+		t.Parallel()
+
+		if ipValue := command.Lookup[net.IP](fs, "ip"); ipValue.String() != "127.0.0.1" {
+			t.Errorf("ipValue = %v, want %v", ipValue.String(), "127.0.0.1")
 		}
 	})
 
