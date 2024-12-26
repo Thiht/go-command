@@ -12,10 +12,17 @@ import (
 // The command flags can be accessed from the FlagSet parameter using [Lookup] or [flag.Lookup].
 type Handler func(context.Context, *flag.FlagSet, []string) int
 
+// Middleware represents a function used to wrap a [Handler]. They can be used to make actions that will execute before or after the command.
+// They are also inherited by subcommands, unlike command actions.
+type Middleware func(Handler) Handler
+
 // Command represents any command or subcommand of the application.
 type Command interface {
 	// SubCommand adds a new subcommand to an existing command.
 	SubCommand(string) Command
+
+	// Middlewares adds a list of middlewares to the command and its subcommands.
+	Middlewares(...Middleware) Command
 
 	// Action sets the action to execute when calling the command.
 	Action(Handler) Command
@@ -33,6 +40,7 @@ type Command interface {
 type command struct {
 	name        string
 	help        string
+	middlewares []Middleware
 	handler     Handler
 	subCommands map[string]*command
 	flagSet     *flag.FlagSet
@@ -65,6 +73,11 @@ func (c *command) SubCommand(name string) Command {
 	return c.subCommands[name]
 }
 
+func (c *command) Middlewares(middlewares ...Middleware) Command {
+	c.middlewares = append(c.middlewares, middlewares...)
+	return c
+}
+
 func (c *command) Action(handler Handler) Command {
 	c.handler = handler
 	return c
@@ -72,6 +85,7 @@ func (c *command) Action(handler Handler) Command {
 
 func (c *command) Execute(ctx context.Context) {
 	command, args := c, os.Args[1:]
+	middlewares := append([]Middleware{}, c.middlewares...)
 	for {
 		if err := command.flagSet.Parse(args); err != nil {
 			// This should never occur because the flag sets use flag.ExitOnError
@@ -94,6 +108,7 @@ func (c *command) Execute(ctx context.Context) {
 
 		command = subCommand
 		args = args[1:]
+		middlewares = append(middlewares, subCommand.middlewares...)
 	}
 
 	if command.handler == nil {
@@ -108,7 +123,12 @@ func (c *command) Execute(ctx context.Context) {
 		os.Exit(0)
 	}
 
-	os.Exit(command.handler(ctx, command.flagSet, args))
+	handler := command.handler
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		handler = middlewares[i](handler)
+	}
+
+	os.Exit(handler(ctx, command.flagSet, args))
 }
 
 func (c *command) Help(help string) Command {
