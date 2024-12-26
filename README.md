@@ -1,5 +1,7 @@
 # go-command
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/Thiht/go-command.svg)](https://pkg.go.dev/github.com/Thiht/go-command)
+
 **go-command** is a **lightweight** and **easy to use** library for creating **command lines with commands and subcommands**.
 
 This library is built upon the [`flag`](https://pkg.go.dev/flag) package from the standard library.
