@@ -151,7 +151,15 @@ func (c *command) usage() {
 		fullCommand = append([]string{command.name}, fullCommand...)
 	}
 
-	optionsHint := " [OPTIONS]"
+	var nbFlags int
+	c.flagSet.VisitAll(func(*flag.Flag) {
+		nbFlags++
+	})
+
+	optionsHint := ""
+	if nbFlags > 0 {
+		optionsHint = " [OPTIONS]"
+	}
 
 	subCommandHint := ""
 	if len(c.subCommands) > 0 {
@@ -173,10 +181,11 @@ func (c *command) usage() {
 		builder.WriteString("\n")
 	}
 
-	// TODO: check if there are options to print
-	builder.WriteString("\n")
-	builder.WriteString("Options:\n")
-	c.flagSet.PrintDefaults()
+	if nbFlags > 0 {
+		builder.WriteString("\n")
+		builder.WriteString("Options:\n")
+		c.flagSet.PrintDefaults()
+	}
 
 	if len(c.subCommands) > 0 {
 		builder.WriteString("\n")
